@@ -2,6 +2,7 @@ const express = require("express");
 const fileUpload = require("express-fileupload");
 const pdfParse = require("pdf-parse");
 const { Client } = require('@elastic/elasticsearch');
+
 const client = new Client({
     node: 'https://860fff9adba14721ba4c7834874e2cbf.us-central1.gcp.cloud.es.io:443',
     auth: {
@@ -16,9 +17,6 @@ const router = express.Router();
 
 app.use("/", express.static("public"));
 app.use(fileUpload());
-
-
-
 
 async function index(data)
 {
@@ -44,12 +42,13 @@ app.post("/extract-text", (req, res) => {
 
     pdfParse(req.files.pdfFile).then(result => {
         curr.title = req.files.pdfFile.name; 
-        curr.data = JSON.stringify(result.text) ;
+        curr.data = (JSON.stringify(result.text)).replaceAll(/['"]/g, '').replaceAll(/\\n/g, ' ') ;
+        // console.log(curr.data);
         datarow.push(curr);
         // console.log(datarow);
         index(datarow);
 
-        res.send(result.text);
+        res.send(curr.data);
     });
 
 });

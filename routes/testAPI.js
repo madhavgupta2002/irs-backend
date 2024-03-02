@@ -10,7 +10,12 @@ const client = new Client({
     }
 });
 // console.log("hello")
+// async function deleteall() {
+//     await client.indices.delete({ index: 'search-pdf-docs' })
+//     await client.indices.create({ index: 'search-pdf-docs' })
 
+// }
+// deleteall()
 async function search(query) {
     const searchResult = await client.search({
         index: 'search-pdf-docs',

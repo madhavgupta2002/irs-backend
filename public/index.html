@@ -7,30 +7,36 @@
     <title>Document</title>
 </head>
 <body>
-    <input type="file" id="inpFile">
+    <input type="file" id="inpFile" multiple>
     <button type="button" id="btnUpload">Upload</button>
     <br>
     <br>
     <textarea style="width: 300px; height: 150px;" id="resultText" placeholder="Your PDF text will appear here..."></textarea>
     <script>
-        const inpFile = document.getElementById("inpFile");
-        const btnUpload = document.getElementById("btnUpload");
-        const resultText = document.getElementById("resultText");
+const inpFile = document.getElementById("inpFile");
+const btnUpload = document.getElementById("btnUpload");
+const resultText = document.getElementById("resultText");
 
-        btnUpload.addEventListener("click", () => {
-            const formData = new FormData();
+btnUpload.addEventListener("click", async () => {
+  // Loop through each selected file
+  for (const file of inpFile.files) {
+    const formData = new FormData();
+    formData.append("pdfFile", file);
 
-            formData.append("pdfFile", inpFile.files[0]);
+    try {
+      const response = await fetch("/extract-text", {
+        method: "post",
+        body: formData
+      });
+      const extractedText = await response.text();
+      resultText.value += `${file.name}:\n${extractedText.trim()}\n\n`;
+    } catch (error) {
+      console.error("Error processing file:", error);
+      resultText.value += `Error processing ${file.name}\n`;
+    }
+  }
+});
 
-            fetch("/extract-text", {
-                method: "post",
-                body: formData
-            }).then(response => {
-                return response.text();
-            }).then(extractedText => {
-                resultText.value = extractedText.trim();
-            });
-        });
     </script>
 </body>
 </html>
