@@ -4,9 +4,7 @@ var cors=require('cors');
 const router = express.Router();
 router.use(cors());
 
-const API_KEY1= "sk-8XCzNhhOxJ86GMjY7smrT3B"
-const API_KEY2="lbkFJqwDreuDhjlPpAlcu4rTi";
-const API_KEY=API_KEY1+API_KEY2;
+const API_KEY="";
 
 const client = new Client({
     node: 'https://860fff9adba14721ba4c7834874e2cbf.us-central1.gcp.cloud.es.io:443',
