@@ -3,6 +3,7 @@ const express = require("express");
 var cors=require('cors');
 const router = express.Router();
 router.use(cors());
+
 const API_KEY1= "sk-8XCzNhhOxJ86GMjY7smrT3B"
 const API_KEY2="lbkFJqwDreuDhjlPpAlcu4rTi";
 const API_KEY=API_KEY1+API_KEY2;
@@ -17,7 +18,7 @@ const client = new Client({
 async function callOpenAIAPI(query) {
     console.log("Calling the OpenAI API");
     const prompt =`User Query: "${query}"
-    Based on the above User Query for a search engine, generate 5 similar queries capturing the user's intent for better results 
+    Based on the above User Query for a search engine, generate 5 similar queries capturing the user's intent for better results
     NOTE: Just write 5 queries separated by commas strictly in a simple line (dont do any numbering or any punctuation)
     `
     const APIBody = {
