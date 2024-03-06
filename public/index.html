@@ -5,36 +5,156 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: space-between; /* Aligns items on opposite sides */
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        #uploadContainer, #deleteContainer {
+            margin-right: 100px;
+            text-align: center;
+            width: 45%; /* Adjust as needed */
+        }
+        #resultText {
+            width: 100%;
+            height: 150px;
+            margin-top: 20px;
+        }
+        .status, .delete {
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            height: 150px; /* Limiting height to enable scroll if needed */
+        }
+        .status-item {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
 </head>
 <body>
-    <input type="file" id="inpFile" multiple>
-    <button type="button" id="btnUpload">Upload</button>
-    <br>
-    <br>
-    <textarea style="width: 300px; height: 150px;" id="resultText" placeholder="Your PDF text will appear here..."></textarea>
+    <div id="uploadContainer">
+        <h2>Upload Files</h2>
+        <input type="file" id="inpFile" multiple>
+        <button type="button" id="btnUpload">Upload</button>
+        <textarea id="resultText" placeholder="PDF Content"></textarea>
+        <div class="status" id="statusDiv">Status: </div>
+    </div>
+    <div id="deleteContainer">
+      <h2>Delete Files</h2>
+      <button type="button" id="btnShow">Show Files</button>
+
+      <div class="delete" id="deleteDiv">Files to delete: </div>
+      <input type="text" id="deleteInput" placeholder="Enter ID to delete">
+      <button type="button" id="btnDelete">Delete</button>
+      <br>
+      <br>
+      <button type="button" id="btnDeleteAll">DELETE ALL FILES</button> 
+
+  </div>
+      <div style="clear:both;"></div> <!-- Clear float -->
+    
     <script>
-const inpFile = document.getElementById("inpFile");
-const btnUpload = document.getElementById("btnUpload");
-const resultText = document.getElementById("resultText");
+        const inpFile = document.getElementById("inpFile");
+        const btnUpload = document.getElementById("btnUpload");
+        const resultText = document.getElementById("resultText");
+        const statusDiv = document.getElementById("statusDiv");
+        const deleteDiv = document.getElementById("deleteDiv");
+        const btnShow = document.getElementById("btnShow");
+        const btnDelete = document.getElementById("btnDelete");
+        const deleteInput = document.getElementById("deleteInput");
 
-btnUpload.addEventListener("click", async () => {
-  // Loop through each selected file
-  for (const file of inpFile.files) {
-    const formData = new FormData();
-    formData.append("pdfFile", file);
+        btnUpload.addEventListener("click", async () => {
+            // Loop through each selected file
+            for (const file of inpFile.files) {
+                const formData = new FormData();
+                formData.append("pdfFile", file);
+                try {
+                    const response = await fetch("/extract-text", {
+                        method: "post",
+                        body: formData
+                    });
+                    const extractedText = await response.text();
+                    resultText.value += `${file.name}:\n${extractedText.trim()}\n\n`;
+                    const statusItem = document.createElement("div");
+                    statusItem.classList.add("status-item");
+                    statusItem.innerHTML = `${file.name} uploaded successfully`;
+                    statusDiv.appendChild(statusItem);
+                } catch (error) {
+                    console.error("Error processing file:", error);
+                    resultText.value += `Error processing ${file.name}\n`;
+                    const statusItem = document.createElement("div");
+                    statusItem.classList.add("status-item");
+                    statusItem.innerHTML = `Error processing ${file.name}`;
+                    statusDiv.appendChild(statusItem);
+                }
+            }
+        });
 
-    try {
-      const response = await fetch("/extract-text", {
-        method: "post",
-        body: formData
-      });
-      const extractedText = await response.text();
-      resultText.value += `${file.name}:\n${extractedText.trim()}\n\n`;
-    } catch (error) {
-      console.error("Error processing file:", error);
-      resultText.value += `Error processing ${file.name}\n`;
+        btnShow.addEventListener("click", async () => {
+            const response = await fetch("/list-files", {
+                method: "post",
+            });
+            const extractedData = await response.json(); 
+            deleteDiv.innerHTML = "";
+            extractedData.forEach(obj => {
+                const fileDiv = document.createElement("div");
+                fileDiv.innerHTML = `<p>ID: ${obj._id}</p><p>Title: ${obj._source.title}</p>`;
+                deleteDiv.appendChild(fileDiv);
+            });
+        });
+
+        btnDelete.addEventListener("click", async () => {
+            const fileId = deleteInput.value;
+            if (fileId) {
+                try {
+                    const response = await fetch("/delete-file", {
+                        method: "post",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ fileId })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        alert("File deleted successfully");
+                    } else {
+                        alert("Failed to delete file");
+                    }
+                } catch (error) {
+                    console.error("Error deleting file:", error);
+                    alert("Error deleting file");
+                }
+            } else {
+                alert("Please enter an ID to delete");
+            }
+        });
+        const btnDeleteAll = document.getElementById("btnDeleteAll");
+
+btnDeleteAll.addEventListener("click", async () => {
+    // Ask for confirmation
+    const confirmDelete = confirm("Are you sure you want to delete all files?");
+    if (confirmDelete) {
+        try {
+            const response = await fetch("/delete-all", {
+                method: "post"
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert("All files deleted successfully");
+            } else {
+                alert("Failed to delete all files");
+            }
+        } catch (error) {
+              // console.error("Error deleting all files:", error);
+              // alert("Error deleting all files");
+        }
     }
-  }
 });
 
     </script>
