@@ -83,14 +83,12 @@ app.post("/delete-all", async (req, res) => {
 console.log("hello")
 const list=[];
 
-
 async function deleteall() {
     await client.indices.delete({ index: 'search-pdf-docs' })
     await client.indices.create({ index: 'search-pdf-docs' })
-
 }
 
 // deleteall()
 app.listen(9001);
-
+module.exports = router;
 

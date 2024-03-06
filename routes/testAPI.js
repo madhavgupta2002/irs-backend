@@ -2,15 +2,17 @@ const { Client } = require('@elastic/elasticsearch');
 const express = require("express");
 var cors=require('cors');
 const router = express.Router();
+router.use(cors());
+const API_KEY1= "sk-8XCzNhhOxJ86GMjY7smrT3B"
+const API_KEY2="lbkFJqwDreuDhjlPpAlcu4rTi";
+const API_KEY=API_KEY1+API_KEY2;
+
 const client = new Client({
     node: 'https://860fff9adba14721ba4c7834874e2cbf.us-central1.gcp.cloud.es.io:443',
     auth: {
         apiKey: 'N19YNy1ZMEJKRnRuLVVZcmVJckk6ZGtMQmM4Y0JTdy1Ob2NnNW9LemUzUQ=='
     }
 });
-const API_KEY1= "sk-8XCzNhhOxJ86GMjY7smrT3B"
-const API_KEY2="lbkFJqwDreuDhjlPpAlcu4rTi";
-const API_KEY=API_KEY1+API_KEY2;
 
 async function callOpenAIAPI(query) {
     console.log("Calling the OpenAI API");
@@ -50,46 +52,52 @@ async function callOpenAIAPI(query) {
 
 
 async function search(query) {
-    const resp = await callOpenAIAPI(query);
-    const queriesArray = resp.split(', ');
-    queriesArray.push(query);
-    console.log(queriesArray);
-    let allHits = [];
-
-    for (const q of queriesArray) {
-        const searchResult = await client.search({
-            index: 'search-pdf-docs',
-            q: q
-        });
-        console.log("processing query " + q);
-
-        allHits.push(...searchResult.hits.hits);
-    }
-
-    // Sort hits by score
-    allHits.sort((a, b) => b._score - a._score);
-
-    // Remove duplicates based on _id
-    const uniqueHits = allHits.filter((hit, index, self) =>
-        index === self.findIndex(h => h._id === hit._id)
-    );
+    try{
+        const resp = await callOpenAIAPI(query);
+        const queriesArray = resp.split(', ');
+        queriesArray.push(query);
+        console.log(queriesArray);
+        let allHits = [];
     
-    console.log(uniqueHits);
-    console.log(allHits.length);
-    console.log(uniqueHits.length);
-
-    // Without AI
-    // const searchResult = await client.search({
-    //     index: 'search-pdf-docs',
-    //     q: queriesArray[5]
-    // });
-    // let searchHits=searchResult.hits.hits
-    // console.log(searchHits);
-
-    return uniqueHits;
+        for (const q of queriesArray) {
+            const searchResult = await client.search({
+                index: 'search-pdf-docs',
+                q: q
+            });
+            console.log("processing query " + q);
+    
+            allHits.push(...searchResult.hits.hits);
+        }
+    
+        // Sort hits by score
+        allHits.sort((a, b) => b._score - a._score);
+    
+        // Remove duplicates based on _id
+        const uniqueHits = allHits.filter((hit, index, self) =>
+            index === self.findIndex(h => h._id === hit._id)
+        );
+        
+        console.log(uniqueHits);
+        console.log(allHits.length);
+        console.log(uniqueHits.length);
+    
+        // Without AI
+        // const searchResult = await client.search({
+        //     index: 'search-pdf-docs',
+        //     q: queriesArray[5]
+        // });
+        // let searchHits=searchResult.hits.hits
+        // console.log(searchHits);
+    
+        return uniqueHits;
+    
+    }
+    catch{
+        let allHits = [];
+        return allHits;
+    }
 }
 
-router.use(cors());
 
 router.get("/", async function(req, res, next) {
     try {
