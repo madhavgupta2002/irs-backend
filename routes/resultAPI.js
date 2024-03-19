@@ -4,12 +4,13 @@ var cors=require('cors');
 const router = express.Router();
 router.use(cors());
 
+const API_KEY="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";
 const API_KEY="";
 
 const client = new Client({
-    node: 'https://860fff9adba14721ba4c7834874e2cbf.us-central1.gcp.cloud.es.io:443',
+    node: 'https://14d002628c614b1199230d8807744824.us-central1.gcp.cloud.es.io:443',
     auth: {
-        apiKey: 'N19YNy1ZMEJKRnRuLVVZcmVJckk6ZGtMQmM4Y0JTdy1Ob2NnNW9LemUzUQ=='
+        apiKey: 'WGJDYlZJNEIyMGhDX1V0SlRad1M6TkhTSm1LeVBTc3VoOGYwakNoZkN1Zw=='
     }
 });
 

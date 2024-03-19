@@ -4,12 +4,12 @@ var cors=require('cors');
 
 const router = express.Router();
 const client = new Client({
-    node: 'https://860fff9adba14721ba4c7834874e2cbf.us-central1.gcp.cloud.es.io:443',
+    node: 'https://14d002628c614b1199230d8807744824.us-central1.gcp.cloud.es.io:443',
     auth: {
-        apiKey: 'N19YNy1ZMEJKRnRuLVVZcmVJckk6ZGtMQmM4Y0JTdy1Ob2NnNW9LemUzUQ=='
+        apiKey: 'WGJDYlZJNEIyMGhDX1V0SlRad1M6TkhTSm1LeVBTc3VoOGYwakNoZkN1Zw=='
     }
 });
-
+// a60bf74f658e42058af03652095b7e6c:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvJDE0ZDAwMjYyOGM2MTRiMTE5OTIzMGQ4ODA3NzQ0ODI0JDI5NjM1YjQ4NWU4MjRjZjFiN2EyMzFhZmY1Y2VmZjdk
 async function search(query) {
     const searchResult = await client.search({
         index: 'search-pdf-docs',

@@ -8,32 +8,86 @@
     <style>
         body {
             display: flex;
-            justify-content: space-between; /* Aligns items on opposite sides */
+            justify-content: space-between;
             align-items: center;
             height: 100vh;
             margin: 0;
             padding: 20px;
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
         }
         #uploadContainer, #deleteContainer {
             margin-right: 100px;
             text-align: center;
-            width: 45%; /* Adjust as needed */
+            width: 45%;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
         }
         #resultText {
             width: 100%;
             height: 150px;
             margin-top: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            font-family: monospace;
         }
         .status, .delete {
             border: 1px solid #ccc;
-            padding: 10px;
-            overflow-y: auto;
-            height: 150px; /* Limiting height to enable scroll if needed */
+    padding: 10px;
+    overflow-y: auto; /* Change from 'auto' to 'scroll' */
+    height: 300px; /* Increase the height as per your requirement */
+    border-radius: 5px;
         }
         .status-item {
             margin-bottom: 5px;
             padding: 5px;
             border-bottom: 1px solid #eee;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        button {
+            background-color: rgb(68, 115, 255);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #319fff;
+        }
+        input[type="text"], input[type="file"] {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: rgb(68, 115, 255);
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .loading {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(68, 115, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: rgb(68, 115, 255);
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -47,18 +101,16 @@
     </div>
     <div id="deleteContainer">
       <h2>Delete Files</h2>
-      <button type="button" id="btnShow">Show Files</button>
-
-      <div class="delete" id="deleteDiv">Files to delete: </div>
-      <input type="text" id="deleteInput" placeholder="Enter ID to delete">
-      <button type="button" id="btnDelete">Delete</button>
+      <button type="button" id="btnShow">Refresh Files</button>
+      <div class="delete" id="deleteDiv">
+        <div class="loading" id="loadingSpinner" style="display: none;"></div>
+        Files to delete:
+      </div>
       <br>
       <br>
-      <button type="button" id="btnDeleteAll">DELETE ALL FILES</button> 
-
-  </div>
-      <div style="clear:both;"></div> <!-- Clear float -->
-    
+      <button type="button" id="btnDeleteAll">DELETE ALL FILES</button>
+    </div>
+    <div style="clear:both;"></div>
     <script>
         const inpFile = document.getElementById("inpFile");
         const btnUpload = document.getElementById("btnUpload");
@@ -66,8 +118,11 @@
         const statusDiv = document.getElementById("statusDiv");
         const deleteDiv = document.getElementById("deleteDiv");
         const btnShow = document.getElementById("btnShow");
-        const btnDelete = document.getElementById("btnDelete");
-        const deleteInput = document.getElementById("deleteInput");
+        const loadingSpinner = document.getElementById("loadingSpinner");
+
+        window.onload = async () => {
+            await showFiles();
+        };
 
         btnUpload.addEventListener("click", async () => {
             // Loop through each selected file
@@ -96,67 +151,74 @@
             }
         });
 
-        btnShow.addEventListener("click", async () => {
+        const showFiles = async () => {
+            loadingSpinner.style.display = "inline-block";
             const response = await fetch("/list-files", {
                 method: "post",
             });
-            const extractedData = await response.json(); 
+            const extractedData = await response.json();
             deleteDiv.innerHTML = "";
+            deleteDiv.innerHTML += '<div class="loading" id="loadingSpinner" style="display: none;"></div>Files to delete:';
             extractedData.forEach(obj => {
                 const fileDiv = document.createElement("div");
-                fileDiv.innerHTML = `<p>ID: ${obj._id}</p><p>Title: ${obj._source.title}</p>`;
+                fileDiv.classList.add("file-item");
+                fileDiv.innerHTML = `Title: ${obj._source.title}</span><button data-id="${obj._id}">Delete</button>`;
                 deleteDiv.appendChild(fileDiv);
             });
-        });
 
-        btnDelete.addEventListener("click", async () => {
-            const fileId = deleteInput.value;
-            if (fileId) {
+            const deleteButtons = deleteDiv.querySelectorAll("button");
+            deleteButtons.forEach(btn => {
+                btn.addEventListener("click", async () => {
+                    const fileId = btn.dataset.id;
+                    try {
+                        const response = await fetch("/delete-file", {
+                            method: "post",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({ fileId })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            alert("File deleted successfully");
+                            btn.parentNode.remove();
+                        } else {
+                            alert("Failed to delete file");
+                        }
+                    } catch (error) {
+                        console.error("Error deleting file:", error);
+                        alert("Error deleting file");
+                    }
+                });
+            });
+            loadingSpinner.style.display = "none";
+        };
+
+        btnShow.addEventListener("click", showFiles);
+
+        const btnDeleteAll = document.getElementById("btnDeleteAll");
+
+        btnDeleteAll.addEventListener("click", async () => {
+            // Ask for confirmation
+            const confirmDelete = confirm("Are you sure you want to delete all files?");
+            if (confirmDelete) {
                 try {
-                    const response = await fetch("/delete-file", {
-                        method: "post",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ fileId })
+                    const response = await fetch("/delete-all", {
+                        method: "post"
                     });
                     const result = await response.json();
                     if (result.success) {
-                        alert("File deleted successfully");
+                        alert("All files deleted successfully");
+                        deleteDiv.innerHTML = "";
                     } else {
-                        alert("Failed to delete file");
+                        alert("Failed to delete all files");
                     }
                 } catch (error) {
-                    console.error("Error deleting file:", error);
-                    alert("Error deleting file");
+                    // console.error("Error deleting all files:", error);
+                    // alert("Error deleting all files");
                 }
-            } else {
-                alert("Please enter an ID to delete");
             }
         });
-        const btnDeleteAll = document.getElementById("btnDeleteAll");
-
-btnDeleteAll.addEventListener("click", async () => {
-    // Ask for confirmation
-    const confirmDelete = confirm("Are you sure you want to delete all files?");
-    if (confirmDelete) {
-        try {
-            const response = await fetch("/delete-all", {
-                method: "post"
-            });
-            const result = await response.json();
-            if (result.success) {
-                alert("All files deleted successfully");
-            } else {
-                alert("Failed to delete all files");
-            }
-        } catch (error) {
-              // console.error("Error deleting all files:", error);
-              // alert("Error deleting all files");
-        }
-    }
-});
-
     </script>
 </body>
 </html>
