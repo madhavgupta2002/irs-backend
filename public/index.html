@@ -95,11 +95,23 @@
     <div id="uploadContainer">
         <h2>Upload Files</h2>
         <input type="file" id="inpFile" multiple>
+        <select id="domainSelect">
+            <option value="">Select Domain</option>
+            <option value="Mathematics">Mathematics</option>
+            <option value="Life Sciences">Life Sciences</option>
+            <option value="Computer Science">Computer Science</option>
+            <option value="Physics">Physics</option>
+            <option value="Medicine and Healthcare">Medicine and Healthcare</option>
+            <option value="Environmental Science">Environmental Science</option>
+            <option value="Engineering">Engineering</option>
+            <option value="Social Sciences">Social Sciences</option>
+            <option value="Education">Education</option>
+            <option value="Defense">Defense</option>
+        </select>
         <button type="button" id="btnUpload">Upload</button>
         <textarea id="resultText" placeholder="PDF Content"></textarea>
         <div class="status" id="statusDiv">Status: </div>
-    </div>
-    <div id="deleteContainer">
+    </div>    <div id="deleteContainer">
       <h2>Delete Files</h2>
       <button type="button" id="btnShow">Refresh Files</button>
       <div class="delete" id="deleteDiv">
@@ -125,10 +137,17 @@
         };
 
         btnUpload.addEventListener("click", async () => {
+            const selectedDomain = document.getElementById("domainSelect").value;
+            if (!selectedDomain) {
+                alert("Please select a domain");
+                return;
+            }
+
             // Loop through each selected file
             for (const file of inpFile.files) {
                 const formData = new FormData();
                 formData.append("pdfFile", file);
+                formData.append("domain", selectedDomain);
                 try {
                     const response = await fetch("/extract-text", {
                         method: "post",
@@ -150,7 +169,6 @@
                 }
             }
         });
-
         const showFiles = async () => {
             loadingSpinner.style.display = "inline-block";
             const response = await fetch("/list-files", {

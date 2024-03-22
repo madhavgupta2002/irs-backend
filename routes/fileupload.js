@@ -52,15 +52,26 @@ app.post("/extract-text", (req, res) => {
         res.end();
     }
     const datarow = [];
-    const curr={"link": "google.com", "title": "", "data": ""};
+    // const curr = { "link": "google.com", "title": "", "data": "", "domain": "" };
+    // pdfParse(req.files.pdfFile).then(result => {
+    //     curr.title = req.files.pdfFile.name;
+    //     curr.data = (JSON.stringify(result.text)).replaceAll(/['"]/g, '').replaceAll(/\\n/g, ' ');
+    //     curr.domain = req.body.domain; // Get the domain value from the request body
+    //     datarow.push(curr);
+    //     index(datarow);
+    //     res.send(curr.data);
+    // });
+    const curr = { "domain": "", "title": "", "data": "", "link": "google.com" };
     pdfParse(req.files.pdfFile).then(result => {
-        curr.title = req.files.pdfFile.name; 
-        curr.data = (JSON.stringify(result.text)).replaceAll(/['"]/g, '').replaceAll(/\\n/g, ' ') ;
+        curr.title = req.files.pdfFile.name;
+        curr.data = (JSON.stringify(result.text)).replaceAll(/['"]/g, '').replaceAll(/\\n/g, ' ');
+        curr.domain = req.body.domain; // Get the domain value from the request body
         datarow.push(curr);
         index(datarow);
         res.send(curr.data);
     });
 });
+
 app.post("/delete-file", async (req, res) => {
     const fileId = req.body.fileId;
     try {

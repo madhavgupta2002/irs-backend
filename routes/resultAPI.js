@@ -4,7 +4,7 @@ var cors=require('cors');
 const router = express.Router();
 router.use(cors());
 
-const API_KEY="";
+const API_KEY="";           // API key missing
 
 const client = new Client({
     node: 'https://14d002628c614b1199230d8807744824.us-central1.gcp.cloud.es.io:443',
@@ -52,7 +52,9 @@ async function callOpenAIAPI(query) {
 
 async function search(query) {
     try{
-        const resp = await callOpenAIAPI(query);
+        // const resp = await callOpenAIAPI(query);
+        const resp = "math, mathematics, algebra";      // fix the openAI api call
+        console.log(resp);
         const queriesArray = resp.split(', ');
         queriesArray.push(query);
         console.log(queriesArray);
