@@ -10,7 +10,6 @@ const client = new Client({
         apiKey: 'N19YNy1ZMEJKRnRuLVVZcmVJckk6ZGtMQmM4Y0JTdy1Ob2NnNW9LemUzUQ=='
     }
 });
-
 async function parse(){
     index()
 }

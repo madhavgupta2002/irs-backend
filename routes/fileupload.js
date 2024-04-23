@@ -3,72 +3,75 @@ const fileUpload = require("express-fileupload");
 const pdfParse = require("pdf-parse");
 const { Client } = require('@elastic/elasticsearch');
 const bodyParser = require("body-parser");
-
+const async = require('async');
 const client = new Client({
-    node: 'https://14d002628c614b1199230d8807744824.us-central1.gcp.cloud.es.io:443',
+    node: 'https://197566baa3084a29a18f60154f5a9fe9.us-central1.gcp.cloud.es.io:443',
     auth: {
-        apiKey: 'WGJDYlZJNEIyMGhDX1V0SlRad1M6TkhTSm1LeVBTc3VoOGYwakNoZkN1Zw=='
+        apiKey: 'SUNVRUM0OEJuWlBCWTNsYWRPc086UVhPckY1a2lUWnV0bzlaZUprYVh3dw=='
     }
 });
-
-var cors=require('cors');
+var cors = require('cors');
 const app = express();
-const resp =  client.info();
+const resp = client.info();
 const router = express.Router();
 app.use(bodyParser.json());
-
 app.use("/", express.static("public"));
 app.use(fileUpload());
 
-async function index(data)
-{
-    console.log(data)
-      const result = await client.helpers.bulk({
+async function index(data) {
+    console.log(data);
+    const result = await client.helpers.bulk({
         datasource: data,
         pipeline: "ent-search-generic-ingestion",
-        onDocument: (doc) => ({ index: { _index: 'search-pdf-docs' }}),
-      });
-      console.log("Hi")
+        onDocument: (doc) => ({ index: { _index: 'search-pdf-docs' } }),
+    });
+    console.log("Hi");
     console.log(result);
 }
+
 app.post("/list-files", async (req, res) => {
-    // console.log("called");
     const ourList = await listFiles();
     res.send(ourList);
 });
+
 async function listFiles() {
-    const list  = await client.search({
+    const list = await client.search({
         index: 'search-pdf-docs',
     });
-    // console.log(list.hits.hits) 
     return (list.hits.hits);
 }
 
-app.post("/extract-text", (req, res) => {
+const uploadQueue = async.queue(async function (task, callback) {
+    const { req } = task;
     console.log("called");
-
-    if (!req.files && !req.files.pdfFile) {
-        res.status(400);
-        res.end();
+    if (!req.files || !req.files.pdfFile) {
+        callback();
+        return;
     }
-    const datarow = [];
-    // const curr = { "link": "google.com", "title": "", "data": "", "domain": "" };
-    // pdfParse(req.files.pdfFile).then(result => {
-    //     curr.title = req.files.pdfFile.name;
-    //     curr.data = (JSON.stringify(result.text)).replaceAll(/['"]/g, '').replaceAll(/\\n/g, ' ');
-    //     curr.domain = req.body.domain; // Get the domain value from the request body
-    //     datarow.push(curr);
-    //     index(datarow);
-    //     res.send(curr.data);
-    // });
+
     const curr = { "domain": "", "title": "", "data": "", "link": "google.com" };
-    pdfParse(req.files.pdfFile).then(result => {
+    try {
+        const result = await pdfParse(req.files.pdfFile);
         curr.title = req.files.pdfFile.name;
-        curr.data = (JSON.stringify(result.text)).replaceAll(/['"]/g, '').replaceAll(/\\n/g, ' ');
-        curr.domain = req.body.domain; // Get the domain value from the request body
-        datarow.push(curr);
-        index(datarow);
-        res.send(curr.data);
+        curr.data = (JSON.stringify(result.text)).replaceAll(/\['"\]/g, '').replaceAll(/\\\\n/g, ' ');
+        curr.domain = req.body.domain;
+        const datarow = [curr];
+        await index(datarow);
+        callback();
+    } catch (err) {
+        console.error("Error parsing PDF:", err);
+        callback(err);
+    }
+}, 1); // Set concurrency to 1 to process files sequentially
+
+app.post("/extract-text", (req, res) => {
+    uploadQueue.push({ req }, (err) => {
+        if (err) {
+            console.error("Error processing file:", err);
+            res.status(500).send("Error processing file");
+        } else {
+            res.status(200).send("File processed successfully");
+        }
     });
 });
 
@@ -77,7 +80,7 @@ app.post("/delete-file", async (req, res) => {
     try {
         const { body: result } = await client.delete({
             index: 'search-pdf-docs',
-            id: fileId 
+            id: fileId
         });
         console.log("Document deleted:", result);
         res.json({ success: true });
@@ -88,18 +91,16 @@ app.post("/delete-file", async (req, res) => {
 });
 
 app.post("/delete-all", async (req, res) => {
-    deleteall()
-
+    deleteall();
 });
-console.log("hello")
-const list=[];
+
+console.log("hello");
+const list = [];
 
 async function deleteall() {
-    await client.indices.delete({ index: 'search-pdf-docs' })
-    await client.indices.create({ index: 'search-pdf-docs' })
+    await client.indices.delete({ index: 'search-pdf-docs' });
+    await client.indices.create({ index: 'search-pdf-docs' });
 }
 
-// deleteall()
 app.listen(9001);
 module.exports = router;
-
