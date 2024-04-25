@@ -69,7 +69,7 @@ app.post("/extract-text", (req, res) => {
     uploadQueue.push({ req }, (err) => {
         if (err) {
             console.error("Error processing file:", err);
-            res.status(500).send("Error Processing file");
+            res.status(500).send("Error processing file");
         } else {
             res.status(200).send("File processed successfully");
         }
