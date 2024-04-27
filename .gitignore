@@ -3,3 +3,4 @@ package-lock
 dist
 .env
 Dummy PDFs
+fileupload.json
