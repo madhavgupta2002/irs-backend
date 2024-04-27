@@ -4,12 +4,15 @@ const pdfParse = require("pdf-parse");
 const { Client } = require('@elastic/elasticsearch');
 const bodyParser = require("body-parser");
 const async = require('async');
+require("dotenv").config();
+
 const client = new Client({
-    node: 'https://197566baa3084a29a18f60154f5a9fe9.us-central1.gcp.cloud.es.io:443',
+    node: process.env.ELASTIC_URL,
     auth: {
-        apiKey: 'SUNVRUM0OEJuWlBCWTNsYWRPc086UVhPckY1a2lUWnV0bzlaZUprYVh3dw=='
+        apiKey: process.env.ELASTIC_KEY
     }
 });
+
 var cors = require('cors');
 const app = express();
 const resp = client.info();
@@ -33,12 +36,36 @@ app.post("/list-files", async (req, res) => {
     const ourList = await listFiles();
     res.send(ourList);
 });
+app.post("/list-all-files", async (req, res) => {
+    const ourList = await listAllFiles();
+    res.send(ourList);
+});
 
 async function listFiles() {
     const list = await client.search({
         index: 'search-pdf-docs',
+        "size": 15,
+        "query": {
+            "match_all": {}
+        }
+
     });
     console.log(list.hits.hits)
+    console.log("SIZE IS" + (list.hits.hits).length)
+    return (list.hits.hits);
+}
+
+async function listAllFiles() {
+    const list = await client.search({
+        index: 'search-pdf-docs',
+        "size": 300,
+        "query": {
+            "match_all": {}
+        }
+
+    });
+    console.log(list.hits.hits)
+    console.log("SIZE IS" + (list.hits.hits).length)
     return (list.hits.hits);
 }
 

@@ -4,11 +4,8 @@ var cors = require('cors');
 const router = express.Router();
 router.use(cors());
 require("dotenv").config();
-const Groq = require("groq-sdk");
-require("dotenv").config();
 
-const groq = new Groq((api_key = process.env.GROQ_API_KEY));
-
+const API_KEY = "";           // API key missing
 
 const client = new Client({
     node: process.env.ELASTIC_URL,
@@ -18,29 +15,48 @@ const client = new Client({
 });
 
 
-async function callGroqAPI(query) {
-    console.log("Calling the Groq API");
-    const prompt = `User Query: "${query}" Based on the above User Query for a search engine, generate 5 similar queries 
-    capturing the user's intent for better results NOTE: Just write 5 queries separated by commas strictl
-    y in a simple line (dont do any numbering or any punctuation)`;
 
-    const completion = await groq.chat.completions
-        .create({
-            messages: [{ role: "user", content: prompt }],
-            model: "mixtral-8x7b-32768",
-        })
-        .then((chatCompletion) => {
-            return chatCompletion.choices[0]?.message?.content || "";
+async function callOpenAIAPI(query) {
+    console.log("Calling the OpenAI API");
+    const prompt = `User Query: "${query}"
+    Based on the above User Query for a search engine, generate 5 similar queries capturing the user's intent for better results
+    NOTE: Just write 5 queries separated by commas strictly in a simple line (dont do any numbering or any punctuation)
+    `
+    const APIBody = {
+        "model": "gpt-3.5-turbo",
+        "messages": [{ "role": "user", "content": prompt }],
+        "temperature": 0,
+        "max_tokens": 60,
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0
+    }
+    let GPTResponse = "";
+
+    await fetch("https://api.openai.com/v1/chat/completions?", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + API_KEY
+        },
+        body: JSON.stringify(APIBody)
+    }).then((data) => {
+        return data.json();
+    }).then((data) => {
+        data.choices.forEach(choice => {
+            GPTResponse = choice.message.content;
+            // console.log(choice.message.content);
         });
+    });
+    return GPTResponse;
 
-    return completion;
 }
 
 
 async function search(query) {
     try {
-        const resp = (await callGroqAPI(query)).replace(/"/g, '');
-        // const resp = query;      // fix the openAI api call
+        // const resp = await callOpenAIAPI(query);
+        const resp = query;      // fix the openAI api call
         console.log(resp);
         const queriesArray = resp.split(', ');
         // queriesArray.push(query);

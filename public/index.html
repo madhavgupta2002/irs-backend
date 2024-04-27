@@ -114,7 +114,7 @@
 
     </div>    <div id="deleteContainer">
       <h2>Delete Files</h2>
-      <button type="button" id="btnShow">Refresh Files</button>
+      <button type="button" id="btnShow">List All Files (Takes a Minute)</button>
       <div class="delete" id="deleteDiv">
         <div class="loading" id="loadingSpinner" style="display: none;"></div>
         Files to delete:
@@ -212,8 +212,50 @@
             });
             loadingSpinner.style.display = "none";
         };
+        const showAllFiles = async () => {
+            loadingSpinner.style.display = "inline-block";
+            const response = await fetch("/list-all-files", {
+                method: "post",
+            });
+            const extractedData = await response.json();
+            deleteDiv.innerHTML = "";
+            deleteDiv.innerHTML += '<div class="loading" id="loadingSpinner" style="display: none;"></div>Files to delete:';
+            extractedData.forEach(obj => {
+                const fileDiv = document.createElement("div");
+                fileDiv.classList.add("file-item");
+                fileDiv.innerHTML = `Title: ${obj._source.title}</span><button data-id="${obj._id}">Delete</button>`;
+                deleteDiv.appendChild(fileDiv);
+            });
 
-        btnShow.addEventListener("click", showFiles);
+            const deleteButtons = deleteDiv.querySelectorAll("button");
+            deleteButtons.forEach(btn => {
+                btn.addEventListener("click", async () => {
+                    const fileId = btn.dataset.id;
+                    try {
+                        const response = await fetch("/delete-file", {
+                            method: "post",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({ fileId })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            alert("File deleted successfully");
+                            btn.parentNode.remove();
+                        } else {
+                            alert("Failed to delete file");
+                        }
+                    } catch (error) {
+                        console.error("Error deleting file:", error);
+                        alert("Error deleting file");
+                    }
+                });
+            });
+            loadingSpinner.style.display = "none";
+        };
+
+        btnShow.addEventListener("click", showAllFiles);
 
         const btnDeleteAll = document.getElementById("btnDeleteAll");
 
