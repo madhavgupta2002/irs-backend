@@ -6,6 +6,49 @@ const bodyParser = require("body-parser");
 const async = require('async');
 require("dotenv").config();
 
+const Groq = require("groq-sdk");
+
+const groq = new Groq((api_key = process.env.GROQ_API_KEY));
+
+async function findDomainUsingLLM(title) {
+    console.log("Calling the Groq API");
+    const prompt = `Article Title: "${title}" Based on the above Title, Simply write which of the following domains is it most likely to fall in 
+    ""Mathematics", "Life Sciences", "Computer Science", "Physics", "Medicine and Healthcare", "Environmental Science", "Engineering", "Social Sciences", "Education", "Defense""
+    Simply return the name of the domain and nothing else`;
+
+    const completion = await groq.chat.completions
+        .create({
+            messages: [{ role: "user", content: prompt }],
+            model: "mixtral-8x7b-32768",
+        })
+        .then((chatCompletion) => {
+            const fields = [
+                "Mathematics",
+                "Life Sciences",
+                "Computer Science",
+                "Physics",
+                "Medicine and Healthcare",
+                "Environmental Science",
+                "Engineering",
+                "Social Sciences",
+                "Education",
+                "Defense"
+            ];
+            const curr = chatCompletion.choices[0]?.message?.content || "";
+            for (let field of fields) {
+                if (curr.toLowerCase().includes(field.toLowerCase())) {
+                    return field;
+                }
+            }
+
+            // return "No matching field found";
+
+            return chatCompletion.choices[0]?.message?.content || "";
+        });
+
+    return completion;
+}
+
 const client = new Client({
     node: process.env.ELASTIC_URL,
     auth: {
@@ -72,6 +115,9 @@ const uploadQueue = async.queue(async function (task) {
         curr.title = req.files.pdfFile.name;
         curr.data = (JSON.stringify(result.text)).replaceAll(/\['"\]/g, '').replaceAll(/\\\\n/g, ' ');
         curr.domain = req.body.domain;
+        if (curr.domain == "auto") {
+            curr.domain = await findDomainUsingLLM(curr.title);
+        }
         curr.link = await uploadPDF(req.files.pdfFile); // Call the uploadPDF function here
         const datarow = [curr];
         await index(datarow);

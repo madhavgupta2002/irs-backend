@@ -93,12 +93,11 @@
 </head>
 <body>
     <div id="uploadContainer">
-        <form>
-
         <h2>Upload Files</h2>
         <input type="file" id="inpFile" multiple>
         <select id="domainSelect">
             <option value="">Select Domain</option>
+            <option value="auto">auto</option>
             <option value="Mathematics">Mathematics</option>
             <option value="Life Sciences">Life Sciences</option>
             <option value="Computer Science">Computer Science</option>
@@ -111,12 +110,11 @@
             <option value="Defense">Defense</option>
         </select>
         <button type="button" id="btnUpload">Upload</button>
-                </form>
-
         <div class="status" id="statusDiv">Status: </div>
                 <textarea id="resultText" placeholder="PDF Content"></textarea>
 
-    </div>    <div id="deleteContainer">
+    </div>    
+    <div id="deleteContainer">
       <h2>Delete Files</h2>
       <button type="button" id="btnShow">List All Files (Takes a Minute)</button>
       <div class="delete" id="deleteDiv">
@@ -157,7 +155,7 @@
                     const response = await fetch("/extract-text", {
                         method: "post",
                         body: formData
-                    });
+                    }); 
                     const extractedText = await response.text();
                     resultText.value += `${file.name}:\n${extractedText.trim()}\n\n`;
                     const statusItem = document.createElement("div");
