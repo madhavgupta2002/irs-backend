@@ -21,8 +21,10 @@ const client = new Client({
 async function callGroqAPI(query) {
     console.log("Calling the Groq API");
     const prompt = `User Query: "${query}" Based on the above User Query for a search engine, generate 5 similar queries 
-    capturing the user's intent for better results NOTE: Just write 5 queries separated by commas strictl
-    y in a simple line (dont do any numbering or any punctuation)`;
+    capturing the user's intent for better results 
+    NOTE: Just write 5 short queries separated by commas strictly
+     in a simple line (dont do any numbering or any punctuation)
+     Do not output any explaination `;
 
     const completion = await groq.chat.completions
         .create({
@@ -43,7 +45,7 @@ async function search(query) {
         // const resp = query;      // fix the openAI api call
         console.log(resp);
         const queriesArray = resp.split(', ');
-        // queriesArray.push(query);
+        queriesArray.push(query);
         console.log(queriesArray);
         let allHits = [];
 
